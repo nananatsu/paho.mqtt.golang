@@ -1,6 +1,7 @@
 package packets
 
 import (
+	"bufio"
 	"fmt"
 	"io"
 )
@@ -16,12 +17,13 @@ func (pc *PubcompPacket) String() string {
 	return fmt.Sprintf("%s MessageID: %d", pc.FixedHeader, pc.MessageID)
 }
 
-func (pc *PubcompPacket) Write(w io.Writer) error {
+func (pc *PubcompPacket) Write(w *bufio.Writer) error {
 	var err error
 	pc.FixedHeader.RemainingLength = 2
 	packet := pc.FixedHeader.pack()
 	packet.Write(encodeUint16(pc.MessageID))
-	_, err = packet.WriteTo(w)
+	// _, err = packet.WriteTo(w)
+	_, err = w.Write(packet.Bytes())
 
 	return err
 }

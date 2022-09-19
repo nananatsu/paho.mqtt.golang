@@ -1,6 +1,7 @@
 package packets
 
 import (
+	"bufio"
 	"bytes"
 	"fmt"
 	"io"
@@ -19,7 +20,7 @@ func (s *SubscribePacket) String() string {
 	return fmt.Sprintf("%s MessageID: %d topics: %s", s.FixedHeader, s.MessageID, s.Topics)
 }
 
-func (s *SubscribePacket) Write(w io.Writer) error {
+func (s *SubscribePacket) Write(w *bufio.Writer) error {
 	var body bytes.Buffer
 	var err error
 
@@ -31,8 +32,12 @@ func (s *SubscribePacket) Write(w io.Writer) error {
 	s.FixedHeader.RemainingLength = body.Len()
 	packet := s.FixedHeader.pack()
 	packet.Write(body.Bytes())
-	_, err = packet.WriteTo(w)
-
+	// _, err = packet.WriteTo(w)
+	_, err = w.Write(packet.Bytes())
+	if err != nil {
+		return err
+	}
+	err = w.Flush()
 	return err
 }
 

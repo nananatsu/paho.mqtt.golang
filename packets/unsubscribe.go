@@ -1,6 +1,7 @@
 package packets
 
 import (
+	"bufio"
 	"bytes"
 	"fmt"
 	"io"
@@ -18,7 +19,7 @@ func (u *UnsubscribePacket) String() string {
 	return fmt.Sprintf("%s MessageID: %d", u.FixedHeader, u.MessageID)
 }
 
-func (u *UnsubscribePacket) Write(w io.Writer) error {
+func (u *UnsubscribePacket) Write(w *bufio.Writer) error {
 	var body bytes.Buffer
 	var err error
 	body.Write(encodeUint16(u.MessageID))
@@ -28,8 +29,12 @@ func (u *UnsubscribePacket) Write(w io.Writer) error {
 	u.FixedHeader.RemainingLength = body.Len()
 	packet := u.FixedHeader.pack()
 	packet.Write(body.Bytes())
-	_, err = packet.WriteTo(w)
-
+	// _, err = packet.WriteTo(w)
+	_, err = w.Write(packet.Bytes())
+	if err != nil {
+		return err
+	}
+	err = w.Flush()
 	return err
 }
 

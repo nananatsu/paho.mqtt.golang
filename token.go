@@ -79,9 +79,10 @@ func (b *baseToken) WaitTimeout(d time.Duration) bool {
 	timer := time.NewTimer(d)
 	select {
 	case <-b.complete:
-		if !timer.Stop() {
+		if !timer.Stop() && len(timer.C) > 0 {
 			<-timer.C
 		}
+		timer.Reset(d)
 		return true
 	case <-timer.C:
 	}

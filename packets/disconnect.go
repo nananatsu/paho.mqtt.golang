@@ -1,6 +1,7 @@
 package packets
 
 import (
+	"bufio"
 	"io"
 )
 
@@ -14,10 +15,14 @@ func (d *DisconnectPacket) String() string {
 	return d.FixedHeader.String()
 }
 
-func (d *DisconnectPacket) Write(w io.Writer) error {
+func (d *DisconnectPacket) Write(w *bufio.Writer) error {
 	packet := d.FixedHeader.pack()
-	_, err := packet.WriteTo(w)
-
+	// _, err := packet.WriteTo(w)
+	_, err := w.Write(packet.Bytes())
+	if err != nil {
+		return err
+	}
+	err = w.Flush()
 	return err
 }
 

@@ -1,6 +1,7 @@
 package packets
 
 import (
+	"bufio"
 	"bytes"
 	"encoding/binary"
 	"errors"
@@ -12,7 +13,7 @@ import (
 // decoded MQTT packets, either from being read or before being
 // written
 type ControlPacket interface {
-	Write(io.Writer) error
+	Write(*bufio.Writer) error
 	Unpack(io.Reader) error
 	String() string
 	Details() Details
@@ -108,7 +109,48 @@ var ConnErrors = map[byte]error{
 // to read an MQTT packet from the stream. It returns a ControlPacket
 // representing the decoded MQTT packet and an error. One of these returns will
 // always be nil, a nil ControlPacket indicating an error occurred.
-func ReadPacket(r io.Reader) (ControlPacket, error) {
+func ReadPacket(r *bufio.Reader) (ControlPacket, error) {
+	var fh FixedHeader
+	b := make([]byte, 1)
+
+	_, err := io.ReadFull(r, b)
+	if err != nil {
+		return nil, err
+	}
+
+	err = fh.unpack(b[0], r)
+	if err != nil {
+		return nil, err
+	}
+
+	cp, err := NewControlPacketWithHeader(fh)
+	if err != nil {
+		return nil, err
+	}
+
+	packetBytes := make([]byte, fh.RemainingLength)
+	n, err := io.ReadFull(r, packetBytes)
+	if err != nil {
+		return nil, err
+	}
+	if n != fh.RemainingLength {
+		return nil, errors.New("failed to read expected data")
+	}
+
+	err = cp.Unpack(bytes.NewBuffer(packetBytes))
+	return cp, err
+}
+
+func ReadPacketNoBlocking(r *bufio.Reader) (ControlPacket, error) {
+
+	size := r.Buffered()
+	if size == 0 {
+		r.Peek(1)
+		return nil, nil
+	} else if size < 4 {
+		fmt.Println("Buffered < 4::", size)
+	}
+
 	var fh FixedHeader
 	b := make([]byte, 1)
 

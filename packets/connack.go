@@ -1,6 +1,7 @@
 package packets
 
 import (
+	"bufio"
 	"bytes"
 	"fmt"
 	"io"
@@ -18,7 +19,7 @@ func (ca *ConnackPacket) String() string {
 	return fmt.Sprintf("%s sessionpresent: %t returncode: %d", ca.FixedHeader, ca.SessionPresent, ca.ReturnCode)
 }
 
-func (ca *ConnackPacket) Write(w io.Writer) error {
+func (ca *ConnackPacket) Write(w *bufio.Writer) error {
 	var body bytes.Buffer
 	var err error
 
@@ -27,8 +28,13 @@ func (ca *ConnackPacket) Write(w io.Writer) error {
 	ca.FixedHeader.RemainingLength = 2
 	packet := ca.FixedHeader.pack()
 	packet.Write(body.Bytes())
-	_, err = packet.WriteTo(w)
+	_, err = w.Write(packet.Bytes())
 
+	if err != nil {
+		return err
+	}
+	err = w.Flush()
+	// _, err = packet.WriteTo(w)
 	return err
 }
 

@@ -289,21 +289,16 @@ func Test_MatchAndDispatch(t *testing.T) {
 	pub.TopicName = "a"
 	pub.Payload = []byte("foo")
 
-	msgs := make(chan *packets.PublishPacket)
-
 	router := newRouter()
 	router.addRoute("a", cb)
 
 	stopped := make(chan bool)
 	go func() {
-		router.matchAndDispatch(msgs, true, &client{oboundP: make(chan *PacketAndToken, 100)})
+		router.matchAndDispatch(pub, true, &client{}, make(chan *ComnsPacket, 100))
 		stopped <- true
 	}()
-	msgs <- pub
 
 	<-calledback
-
-	close(msgs)
 
 	select {
 	case <-stopped:
@@ -325,22 +320,16 @@ func Test_SharedSubscription_MatchAndDispatch(t *testing.T) {
 	pub.TopicName = "a"
 	pub.Payload = []byte("foo")
 
-	msgs := make(chan *packets.PublishPacket)
-
 	router := newRouter()
 	router.addRoute("$share/az1/a", cb)
 
 	stopped := make(chan bool)
 	go func() {
-		router.matchAndDispatch(msgs, true, &client{oboundP: make(chan *PacketAndToken, 100)})
+		router.matchAndDispatch(pub, true, &client{}, make(chan *ComnsPacket, 100))
 		stopped <- true
 	}()
 
-	msgs <- pub
-
 	<-calledback
-
-	close(msgs)
 
 	select {
 	case <-stopped:

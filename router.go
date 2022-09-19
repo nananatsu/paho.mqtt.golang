@@ -131,52 +131,44 @@ func (r *router) setDefaultHandler(handler MessageHandler) {
 // takes messages off the channel, matches them against the internal route list and calls the
 // associated callback (or the defaultHandler, if one exists and no other route matched). If
 // anything is sent down the stop channel the function will end.
-func (r *router) matchAndDispatch(messages <-chan *packets.PublishPacket, order bool, client *client) <-chan *PacketAndToken {
-	ackChan := make(chan *PacketAndToken)
-	go func() {
-		for message := range messages {
-			// DEBUG.Println(ROU, "matchAndDispatch received message")
-			sent := false
-			r.RLock()
-			m := messageFromPublish(message, ackFunc(ackChan, client.persist, message))
-			var handlers []MessageHandler
-			for e := r.routes.Front(); e != nil; e = e.Next() {
-				if e.Value.(*route).match(message.TopicName) {
-					if order {
-						handlers = append(handlers, e.Value.(*route).callback)
-					} else {
-						hd := e.Value.(*route).callback
-						go func() {
-							hd(client, m)
-							m.Ack()
-						}()
-					}
-					sent = true
-				}
+func (r *router) matchAndDispatch(message *packets.PublishPacket, order bool, client *client, ackChan chan *ComnsPacket) {
+
+	// DEBUG.Println(ROU, "matchAndDispatch received message")
+	sent := false
+	r.RLock()
+	m := messageFromPublish(message, ackFunc(ackChan, client.persist, message, client))
+	var handlers []MessageHandler
+	for e := r.routes.Front(); e != nil; e = e.Next() {
+		if e.Value.(*route).match(message.TopicName) {
+			if order {
+				handlers = append(handlers, e.Value.(*route).callback)
+			} else {
+				hd := e.Value.(*route).callback
+				go func() {
+					hd(client, m)
+					m.Ack()
+				}()
 			}
-			if !sent {
-				if r.defaultHandler != nil {
-					if order {
-						handlers = append(handlers, r.defaultHandler)
-					} else {
-						go func() {
-							r.defaultHandler(client, m)
-							m.Ack()
-						}()
-					}
-				} else {
-					DEBUG.Println(ROU, "matchAndDispatch received message and no handler was available. Message will NOT be acknowledged.")
-				}
-			}
-			r.RUnlock()
-			for _, handler := range handlers {
-				handler(client, m)
-				m.Ack()
-			}
-			// DEBUG.Println(ROU, "matchAndDispatch handled message")
+			sent = true
 		}
-		close(ackChan)
-		DEBUG.Println(ROU, "matchAndDispatch exiting")
-	}()
-	return ackChan
+	}
+	if !sent {
+		if r.defaultHandler != nil {
+			if order {
+				handlers = append(handlers, r.defaultHandler)
+			} else {
+				go func() {
+					r.defaultHandler(client, m)
+					m.Ack()
+				}()
+			}
+		} else {
+			DEBUG.Println(ROU, "matchAndDispatch received message and no handler was available. Message will NOT be acknowledged.")
+		}
+	}
+	r.RUnlock()
+	for _, handler := range handlers {
+		handler(client, m)
+		m.Ack()
+	}
 }

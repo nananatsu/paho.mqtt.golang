@@ -15,6 +15,7 @@
 package mqtt
 
 import (
+	"bufio"
 	"bytes"
 	"testing"
 
@@ -36,7 +37,7 @@ func Test_NewPingReqMessage(t *testing.T) {
 	}
 
 	var buf bytes.Buffer
-	if err := pr.Write(&buf); err != nil {
+	if err := pr.Write(bufio.NewWriter(&buf)); err != nil {
 		t.Fatal(err)
 	}
 	bs := buf.Bytes()
@@ -55,7 +56,7 @@ func Test_DecodeMessage_pingresp(t *testing.T) {
 		0xD0,
 		0x00,
 	})
-	presp, _ := packets.ReadPacket(bs)
+	presp, _ := packets.ReadPacket(bufio.NewReader(bs))
 	if presp.(*packets.PingrespPacket).MessageType != packets.Pingresp {
 		t.Errorf("DecodeMessage ping response wrong msg type: %v", presp.(*packets.PingrespPacket).MessageType)
 	}

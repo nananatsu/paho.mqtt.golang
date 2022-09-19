@@ -15,6 +15,7 @@
 package mqtt
 
 import (
+	"bufio"
 	"bytes"
 	"io/ioutil"
 	"os"
@@ -189,7 +190,7 @@ func Test_FileStore_Get(t *testing.T) {
 	}
 
 	var msg bytes.Buffer
-	if err := m.Write(&msg); err != nil {
+	if err := m.Write(bufio.NewWriter(&msg)); err != nil {
 		t.Fatal(err)
 	}
 	if !bytes.Equal(exp, msg.Bytes()) {
@@ -514,7 +515,7 @@ func Test_MemoryStore_Get(t *testing.T) {
 	}
 
 	var buf bytes.Buffer
-	if err := msg.Write(&buf); err != nil {
+	if err := msg.Write(bufio.NewWriter(&buf)); err != nil {
 		t.Fatal(err)
 	}
 	if !bytes.Equal(exp, buf.Bytes()) {

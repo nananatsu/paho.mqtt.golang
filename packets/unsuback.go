@@ -1,6 +1,7 @@
 package packets
 
 import (
+	"bufio"
 	"fmt"
 	"io"
 )
@@ -16,13 +17,17 @@ func (ua *UnsubackPacket) String() string {
 	return fmt.Sprintf("%s MessageID: %d", ua.FixedHeader, ua.MessageID)
 }
 
-func (ua *UnsubackPacket) Write(w io.Writer) error {
+func (ua *UnsubackPacket) Write(w *bufio.Writer) error {
 	var err error
 	ua.FixedHeader.RemainingLength = 2
 	packet := ua.FixedHeader.pack()
 	packet.Write(encodeUint16(ua.MessageID))
-	_, err = packet.WriteTo(w)
-
+	// _, err = packet.WriteTo(w)
+	_, err = w.Write(packet.Bytes())
+	if err != nil {
+		return err
+	}
+	err = w.Flush()
 	return err
 }
 

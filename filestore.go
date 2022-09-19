@@ -15,6 +15,7 @@
 package mqtt
 
 import (
+	"bufio"
 	"io/ioutil"
 	"os"
 	"path"
@@ -110,7 +111,7 @@ func (store *FileStore) Get(key string) packets.ControlPacket {
 	}
 	mfile, oerr := os.Open(filepath)
 	chkerr(oerr)
-	msg, rerr := packets.ReadPacket(mfile)
+	msg, rerr := packets.ReadPacket(bufio.NewReader(mfile))
 	chkerr(mfile.Close())
 
 	// Message was unreadable, return nil
@@ -224,7 +225,7 @@ func write(store, key string, m packets.ControlPacket) {
 	temppath := tmppath(store, key)
 	f, err := os.Create(temppath)
 	chkerr(err)
-	werr := m.Write(f)
+	werr := m.Write(bufio.NewWriter(f))
 	chkerr(werr)
 	cerr := f.Close()
 	chkerr(cerr)

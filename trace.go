@@ -37,4 +37,5 @@ var (
 	CRITICAL Logger = NOOPLogger{}
 	WARN     Logger = NOOPLogger{}
 	DEBUG    Logger = NOOPLogger{}
+	INFO     Logger = NOOPLogger{}
 )

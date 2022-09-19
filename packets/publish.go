@@ -1,6 +1,7 @@
 package packets
 
 import (
+	"bufio"
 	"bytes"
 	"fmt"
 	"io"
@@ -19,7 +20,7 @@ func (p *PublishPacket) String() string {
 	return fmt.Sprintf("%s topicName: %s MessageID: %d payload: %s", p.FixedHeader, p.TopicName, p.MessageID, string(p.Payload))
 }
 
-func (p *PublishPacket) Write(w io.Writer) error {
+func (p *PublishPacket) Write(w *bufio.Writer) error {
 	var body bytes.Buffer
 	var err error
 

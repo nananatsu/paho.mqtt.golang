@@ -1,6 +1,7 @@
 package packets
 
 import (
+	"bufio"
 	"io"
 )
 
@@ -14,9 +15,10 @@ func (pr *PingrespPacket) String() string {
 	return pr.FixedHeader.String()
 }
 
-func (pr *PingrespPacket) Write(w io.Writer) error {
+func (pr *PingrespPacket) Write(w *bufio.Writer) error {
 	packet := pr.FixedHeader.pack()
-	_, err := packet.WriteTo(w)
+	// _, err := packet.WriteTo(w)
+	_, err := w.Write(packet.Bytes())
 
 	return err
 }
